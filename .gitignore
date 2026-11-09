@@ -1,0 +1,6 @@
+/target
+Cargo.lock
+
+# Local notes, not part of the project
+/reports/
+/research_notes/

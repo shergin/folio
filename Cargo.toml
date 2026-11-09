@@ -1,0 +1,13 @@
+[package]
+name = "folio"
+version = "0.0.0"
+edition = "2024"
+description = "A new take on high-performance cross-platform UI frameworks."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/shergin/folio"
+readme = "README.md"
+keywords = ["ui", "gui", "cross-platform", "framework"]
+categories = ["gui"]
+
+[dependencies]
+hooke = "0.0.0"
