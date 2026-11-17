@@ -6,7 +6,7 @@ use hooke::{Children, LayoutCx, LayoutState, Measure, Opt, Parts, PartsMut, Poin
 
 use crate::family::Family;
 use crate::kind::{ShadowNodeKind, child_views};
-use crate::props::{LayoutStyle, Props, ViewProps};
+use crate::props::{LayoutStyle, ViewProps};
 use crate::shadow_node::{LayoutableShadowNode, ShadowNode};
 
 /// What the host says about one window: the space it offers and the facts of its surface.
@@ -59,11 +59,6 @@ impl WindowShadowNode {
         WindowShadowNode { family, props: Arc::new(props), state: None, children, layout: LayoutState::measured(0) }
     }
 
-    /// The props, typed.
-    pub fn props(&self) -> &ViewProps {
-        &self.props
-    }
-
     /// Replaces the props. The author's field.
     pub fn set_props(&mut self, props: ViewProps) {
         self.props = Arc::new(props);
@@ -103,12 +98,14 @@ impl WindowShadowNode {
 }
 
 impl ShadowNode for WindowShadowNode {
+    type Props = ViewProps;
+
     fn family(&self) -> &Arc<Family> {
         &self.family
     }
 
-    fn props(&self) -> &dyn Props {
-        &*self.props
+    fn props(&self) -> &ViewProps {
+        &self.props
     }
 }
 

@@ -84,11 +84,6 @@ impl TextShadowNode {
         TextShadowNode { family, props: Arc::new(props), content, attachments, layout: LayoutState::measured(0) }
     }
 
-    /// The props, typed.
-    pub fn props(&self) -> &TextProps {
-        &self.props
-    }
-
     /// Replaces the props. The author's field. Sizes measured before no longer hold.
     pub fn set_props(&mut self, props: TextProps) {
         self.props = Arc::new(props);
@@ -134,12 +129,14 @@ impl TextShadowNode {
 }
 
 impl ShadowNode for TextShadowNode {
+    type Props = TextProps;
+
     fn family(&self) -> &Arc<Family> {
         &self.family
     }
 
-    fn props(&self) -> &dyn Props {
-        &*self.props
+    fn props(&self) -> &TextProps {
+        &self.props
     }
 }
 

@@ -6,7 +6,7 @@ use hooke::{Children, LayoutNode, Parts, PartsMut};
 
 use crate::family::Family;
 use crate::image::ImageShadowNode;
-use crate::props::{Props, ViewProps};
+use crate::props::ViewProps;
 use crate::shadow_node::{LayoutableShadowNode, ShadowNode};
 use crate::text::TextShadowNode;
 use crate::view::ViewShadowNode;
@@ -22,7 +22,6 @@ use crate::window::WindowShadowNode;
 ///
 /// Typed access is a `match`. Code that does not care about the kind calls the two traits,
 /// which the enum implements by forwarding to its variant.
-#[whichever::dispatch(ShadowNode)]
 #[whichever::dispatch(LayoutableShadowNode)]
 #[derive(Clone, Debug)]
 pub enum ShadowNodeKind {
@@ -37,6 +36,17 @@ pub enum ShadowNodeKind {
     /// A view of a kind this enum does not list.
     #[dispatch(deref)]
     Other(Box<dyn LayoutableShadowNode>),
+}
+
+/// A view of any kind is a node whose props are the props every view has.
+#[whichever::dispatch]
+impl ShadowNode for ShadowNodeKind {
+    type Props = ViewProps;
+
+    #[inline]
+    fn props(&self) -> &ViewProps {
+        self.view_props()
+    }
 }
 
 // A view is 248 bytes, 192 of them layout state.

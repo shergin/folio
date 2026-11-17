@@ -11,8 +11,8 @@ use std::sync::Arc;
 
 /// The complete, immutable description of one node, as its author wrote it.
 ///
-/// A marker for the type-erased view that [`ShadowNode::props`](crate::ShadowNode::props)
-/// gives. Typed code reads the props of a concrete kind instead.
+/// Every kind of node names its props type as
+/// [`ShadowNode::Props`](crate::ShadowNode::Props), and this is what such a type must be.
 pub trait Props: Any + Debug + Send + Sync {}
 
 /// Everything flexbox reads. The layout engine's style, unchanged.

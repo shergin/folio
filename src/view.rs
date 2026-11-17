@@ -6,7 +6,7 @@ use hooke::{Children, LayoutState, Parts, PartsMut};
 
 use crate::family::Family;
 use crate::kind::{ShadowNodeKind, child_views};
-use crate::props::{Props, ViewProps};
+use crate::props::ViewProps;
 use crate::shadow_node::{LayoutableShadowNode, ShadowNode};
 
 /// A view that lays out its children with flexbox.
@@ -26,11 +26,6 @@ impl ViewShadowNode {
         ViewShadowNode { family, props: Arc::new(props), children, layout: LayoutState::container() }
     }
 
-    /// The props, typed.
-    pub fn props(&self) -> &ViewProps {
-        &self.props
-    }
-
     /// Replaces the props. The author's field.
     pub fn set_props(&mut self, props: ViewProps) {
         self.props = Arc::new(props);
@@ -43,12 +38,14 @@ impl ViewShadowNode {
 }
 
 impl ShadowNode for ViewShadowNode {
+    type Props = ViewProps;
+
     fn family(&self) -> &Arc<Family> {
         &self.family
     }
 
-    fn props(&self) -> &dyn Props {
-        &*self.props
+    fn props(&self) -> &ViewProps {
+        &self.props
     }
 }
 

@@ -52,12 +52,14 @@ mod elsewhere {
     }
 
     impl ShadowNode for SwitchShadowNode {
+        type Props = SwitchProps;
+
         fn family(&self) -> &Arc<Family> {
             &self.family
         }
 
-        fn props(&self) -> &dyn Props {
-            &*self.props
+        fn props(&self) -> &SwitchProps {
+            &self.props
         }
     }
 
@@ -206,6 +208,56 @@ fn downcasting_a_custom_kind() {
     let ShadowNodeKind::Other(other) = &*app.switch else { panic!("the switch is another kind") };
     let other: &dyn Any = &**other;
     assert!(other.downcast_ref::<SwitchShadowNode>().unwrap().is_on());
+}
+
+#[test]
+fn props_are_typed_for_a_concrete_kind() {
+    let image = ImageShadowNode::new(ImageProps { source: Some("logo.png".into()), ..Default::default() });
+    assert_eq!(image.props().source.as_deref(), Some("logo.png"));
+
+    let span = TextSpanShadowNode::new(
+        TextSpanProps { style: Arc::new(TextStyle { font_weight: Some(700), ..Default::default() }) },
+        [],
+    );
+    assert_eq!(span.props().style.font_weight, Some(700));
+}
+
+fn image_source<N: ShadowNode<Props = ImageProps>>(node: &N) -> Option<&str> {
+    node.props().source.as_deref()
+}
+
+fn props_of<N: ShadowNode>(node: &N) -> &N::Props {
+    node.props()
+}
+
+#[test]
+fn generic_code_reads_typed_props() {
+    let image = ImageShadowNode::new(ImageProps { source: Some("logo.png".into()), ..Default::default() });
+    assert_eq!(image_source(&image), Some("logo.png"));
+    let props: &ImageProps = props_of(&image);
+    assert_eq!(props.source.as_deref(), Some("logo.png"));
+
+    let app = build();
+    let props: &ViewProps = props_of(&*app.card);
+    assert!(std::ptr::eq(props, app.card.view_props()));
+}
+
+#[test]
+fn a_kind_props_are_its_view_props() {
+    let app = build();
+    assert!(std::ptr::eq(app.picture.props(), app.picture.view_props()));
+    assert!(matches!(&*app.switch, ShadowNodeKind::Other(_)));
+    assert!(std::ptr::eq(app.switch.props(), app.switch.view_props()));
+}
+
+#[test]
+fn a_custom_kind_props_are_typed_after_downcasting() {
+    let app = build();
+    let ShadowNodeKind::Other(other) = &*app.switch else { panic!("the switch is another kind") };
+    let other: &dyn Any = &**other;
+    let switch = other.downcast_ref::<SwitchShadowNode>().unwrap();
+    assert!(switch.props().on);
+    assert!(std::ptr::eq(&switch.props().view, app.switch.view_props()));
 }
 
 #[test]

@@ -7,7 +7,8 @@
 //! # The model
 //!
 //! - **A node is one immutable revision of one element.** [`ShadowNode`] is any node: an
-//!   identity, its [`Family`], and what its author said, its [`Props`].
+//!   identity, its [`Family`], and what its author said, its props. Each kind of node has
+//!   one props type, [`ShadowNode::Props`].
 //! - **A view is a node that a layout system can size and place.** That is
 //!   [`LayoutableShadowNode`]. Every view has [`ViewProps`] and layout state; nothing else
 //!   has layout state.

@@ -52,11 +52,6 @@ impl ImageShadowNode {
         }
     }
 
-    /// The props, typed.
-    pub fn props(&self) -> &ImageProps {
-        &self.props
-    }
-
     /// Replaces the props. The author's field.
     pub fn set_props(&mut self, props: ImageProps) {
         self.props = Arc::new(props);
@@ -81,12 +76,14 @@ impl ImageShadowNode {
 }
 
 impl ShadowNode for ImageShadowNode {
+    type Props = ImageProps;
+
     fn family(&self) -> &Arc<Family> {
         &self.family
     }
 
-    fn props(&self) -> &dyn Props {
-        &*self.props
+    fn props(&self) -> &ImageProps {
+        &self.props
     }
 }
 

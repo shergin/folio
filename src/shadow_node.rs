@@ -15,14 +15,25 @@ use crate::kind::ShadowNodeKind;
 use crate::props::{Props, ViewProps};
 
 /// Any node: an identity and what its author said.
+///
+/// A kind of node has one type of props, [`Props`](ShadowNode::Props). Code that knows the
+/// kind, or is generic over it (`N: ShadowNode<Props = ImageProps>`), reads them typed. A
+/// trait object has forgotten its kind, so the type and [`props`](ShadowNode::props) are
+/// absent there, and only the identity remains.
 #[whichever::dispatchable]
 pub trait ShadowNode: Any + Debug + Send + Sync {
+    /// What an author provides for a node of this kind.
+    type Props: Props
+    where
+        Self: Sized;
+
     /// Who this node is, across revisions.
     fn family(&self) -> &Arc<Family>;
 
-    /// What the author said, with its type erased. Typed code reads the props of a concrete
-    /// kind instead; this is for code that only compares or prints them.
-    fn props(&self) -> &dyn Props;
+    /// What the author said.
+    fn props(&self) -> &Self::Props
+    where
+        Self: Sized;
 }
 
 /// A view: a node that a layout system can size and place.

@@ -40,11 +40,6 @@ impl TextSpanShadowNode {
         TextSpanShadowNode { family, props: Arc::new(props), children }
     }
 
-    /// The props, typed.
-    pub fn props(&self) -> &TextSpanProps {
-        &self.props
-    }
-
     /// What the span contains, in order.
     pub fn children(&self) -> &[Inline] {
         &self.children
@@ -52,11 +47,13 @@ impl TextSpanShadowNode {
 }
 
 impl ShadowNode for TextSpanShadowNode {
+    type Props = TextSpanProps;
+
     fn family(&self) -> &Arc<Family> {
         &self.family
     }
 
-    fn props(&self) -> &dyn Props {
-        &*self.props
+    fn props(&self) -> &TextSpanProps {
+        &self.props
     }
 }
