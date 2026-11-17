@@ -74,7 +74,7 @@ impl LayoutNode for ShadowNodeKind {
 
 /// A child list of `nodes` for a parent of the given family, each child placed under it.
 pub(crate) fn child_views(
-    parent: &Arc<Family>,
+    parent: &Family,
     nodes: impl IntoIterator<Item = Arc<ShadowNodeKind>>,
 ) -> Children<ShadowNodeKind> {
     let children = Children::from_nodes(nodes);

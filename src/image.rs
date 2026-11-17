@@ -32,7 +32,7 @@ pub struct ImageState {
 /// A view with nothing inside it. To its parent it is a measured leaf, sized by the picture.
 #[derive(Clone, Debug)]
 pub struct ImageShadowNode {
-    family: Arc<Family>,
+    family: Family,
     props: Arc<ImageProps>,
     state: Option<Arc<ImageState>>,
     /// Always empty. A layout pass borrows a child list from every view.
@@ -78,7 +78,7 @@ impl ImageShadowNode {
 impl ShadowNode for ImageShadowNode {
     type Props = ImageProps;
 
-    fn family(&self) -> &Arc<Family> {
+    fn family(&self) -> &Family {
         &self.family
     }
 

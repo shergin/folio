@@ -6,7 +6,6 @@
 
 use std::any::Any;
 use std::fmt::Debug;
-use std::sync::Arc;
 
 use hooke::{Parts, PartsMut};
 
@@ -28,7 +27,7 @@ pub trait ShadowNode: Any + Debug + Send + Sync {
         Self: Sized;
 
     /// Who this node is, across revisions.
-    fn family(&self) -> &Arc<Family>;
+    fn family(&self) -> &Family;
 
     /// What the author said.
     fn props(&self) -> &Self::Props

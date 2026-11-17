@@ -38,7 +38,7 @@ pub enum Inline {
 }
 
 /// Places every span of `content` under the family of the node that holds it.
-pub(crate) fn place_spans(parent: &Arc<Family>, content: &[Inline]) {
+pub(crate) fn place_spans(parent: &Family, content: &[Inline]) {
     for inline in content {
         if let Inline::Span(span) = inline {
             span.family().place_under(parent);
@@ -63,7 +63,7 @@ pub enum TextItem {
 /// there. The inline content marks where each one goes.
 #[derive(Clone, Debug)]
 pub struct TextShadowNode {
-    family: Arc<Family>,
+    family: Family,
     props: Arc<TextProps>,
     content: Arc<[Inline]>,
     attachments: Children<ShadowNodeKind>,
@@ -131,7 +131,7 @@ impl TextShadowNode {
 impl ShadowNode for TextShadowNode {
     type Props = TextProps;
 
-    fn family(&self) -> &Arc<Family> {
+    fn family(&self) -> &Family {
         &self.family
     }
 

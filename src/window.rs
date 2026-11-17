@@ -41,7 +41,7 @@ impl WindowState {
 /// as the window's state; until then nothing inside it is laid out.
 #[derive(Clone, Debug)]
 pub struct WindowShadowNode {
-    family: Arc<Family>,
+    family: Family,
     props: Arc<ViewProps>,
     state: Option<Arc<WindowState>>,
     children: Children<ShadowNodeKind>,
@@ -100,7 +100,7 @@ impl WindowShadowNode {
 impl ShadowNode for WindowShadowNode {
     type Props = ViewProps;
 
-    fn family(&self) -> &Arc<Family> {
+    fn family(&self) -> &Family {
         &self.family
     }
 

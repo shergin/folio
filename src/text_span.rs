@@ -24,7 +24,7 @@ impl Props for TextSpanProps {}
 /// and it lives in the inline child list of its text or of an enclosing span.
 #[derive(Clone, Debug)]
 pub struct TextSpanShadowNode {
-    family: Arc<Family>,
+    family: Family,
     props: Arc<TextSpanProps>,
     children: Arc<[Inline]>,
 }
@@ -49,7 +49,7 @@ impl TextSpanShadowNode {
 impl ShadowNode for TextSpanShadowNode {
     type Props = TextSpanProps;
 
-    fn family(&self) -> &Arc<Family> {
+    fn family(&self) -> &Family {
         &self.family
     }
 

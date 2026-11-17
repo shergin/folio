@@ -2,12 +2,13 @@
 //! commit.
 
 use std::any::Any;
+use std::collections::HashSet;
 use std::sync::Arc;
 
 use folio::{
-    Color, ImageProps, ImageShadowNode, ImageState, Inline, LayoutSystems, LayoutableShadowNode, Revision, ShadowNode,
-    ShadowNodeKind, ShadowTree, Stale, TextAttributes, TextItem, TextProps, TextShadowNode, TextSpanProps,
-    TextSpanShadowNode, TextStyle, ViewProps, ViewShadowNode, WindowShadowNode, WindowState, edit,
+    Color, Family, FamilyId, ImageProps, ImageShadowNode, ImageState, Inline, LayoutSystems, LayoutableShadowNode,
+    Revision, ShadowNode, ShadowNodeKind, ShadowTree, Stale, TextAttributes, TextItem, TextProps, TextShadowNode,
+    TextSpanProps, TextSpanShadowNode, TextStyle, ViewProps, ViewShadowNode, WindowShadowNode, WindowState, edit,
 };
 use hooke::{LayoutCx, RootConstraints, Scratch, Size};
 
@@ -30,7 +31,7 @@ mod elsewhere {
 
     #[derive(Clone, Debug)]
     pub struct SwitchShadowNode {
-        family: Arc<Family>,
+        family: Family,
         props: Arc<SwitchProps>,
         children: Children<ShadowNodeKind>,
         layout: LayoutState,
@@ -54,7 +55,7 @@ mod elsewhere {
     impl ShadowNode for SwitchShadowNode {
         type Props = SwitchProps;
 
-        fn family(&self) -> &Arc<Family> {
+        fn family(&self) -> &Family {
             &self.family
         }
 
@@ -188,8 +189,8 @@ fn reading_through_the_traits() {
     let app = build();
     assert_eq!(app.card.layout_parts().children.len(), 4);
     assert_eq!(app.switch.view_props().appearance.opacity, 1.0);
-    assert!(Arc::ptr_eq(&app.label.family().parent().unwrap(), app.card.family()));
-    assert!(Arc::ptr_eq(&app.card.family().parent().unwrap(), app.main.family()));
+    assert_eq!(app.label.family().parent().as_ref(), Some(app.card.family()));
+    assert_eq!(app.card.family().parent().as_ref(), Some(app.main.family()));
 }
 
 #[test]
@@ -307,7 +308,7 @@ fn an_edit_copies_only_the_path_to_the_target() {
     let old_card = child(child(&second.root, 0), 0);
     let new_card = child(child(&third.root, 0), 0);
     assert!(!Arc::ptr_eq(old_card, new_card));
-    assert!(Arc::ptr_eq(old_card.family(), new_card.family()));
+    assert_eq!(old_card.family(), new_card.family());
     assert!(Arc::ptr_eq(child(old_card, 0), child(new_card, 0)), "the label is shared");
     assert!(Arc::ptr_eq(child(old_card, 3), child(new_card, 3)), "and so is the second window");
     assert_eq!(size(child(new_card, 1)).width, 64.0);
@@ -351,6 +352,34 @@ fn a_stale_commit_is_refused_with_the_current_revision() {
 
     let refused = app.tree.try_commit(&app.first, app.first.root.clone());
     assert!(matches!(refused, Err(Stale(now)) if now.number == 3));
+}
+
+#[test]
+fn a_family_is_a_handle_to_one_identity() {
+    let a = Family::new();
+    let b = Family::new();
+    assert_eq!(a.clone(), a);
+    assert_eq!(a.clone().id(), a.id());
+    assert_ne!(a, b);
+    assert_ne!(a.id(), b.id());
+
+    let mut ids: HashSet<FamilyId> = HashSet::new();
+    ids.insert(a.id());
+    ids.insert(a.clone().id());
+    assert_eq!(ids.len(), 1);
+    ids.insert(b.id());
+    assert_eq!(ids.len(), 2);
+
+    // Handles outlive the nodes they came from.
+    let leaf = node(ViewShadowNode::new(ViewProps::default(), []));
+    let holder = ViewShadowNode::new(ViewProps::default(), [leaf.clone()]);
+    let kept = leaf.family().clone();
+    let kept_parent = holder.family().clone();
+    let id = kept.id();
+    drop(holder);
+    drop(leaf);
+    assert_eq!(kept.id(), id);
+    assert_eq!(kept.parent(), Some(kept_parent));
 }
 
 #[test]

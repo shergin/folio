@@ -12,7 +12,7 @@ use crate::shadow_node::{LayoutableShadowNode, ShadowNode};
 /// A view that lays out its children with flexbox.
 #[derive(Clone, Debug)]
 pub struct ViewShadowNode {
-    family: Arc<Family>,
+    family: Family,
     props: Arc<ViewProps>,
     children: Children<ShadowNodeKind>,
     layout: LayoutState,
@@ -40,7 +40,7 @@ impl ViewShadowNode {
 impl ShadowNode for ViewShadowNode {
     type Props = ViewProps;
 
-    fn family(&self) -> &Arc<Family> {
+    fn family(&self) -> &Family {
         &self.family
     }
 
