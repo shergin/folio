@@ -10,4 +10,5 @@ keywords = ["ui", "gui", "cross-platform", "framework"]
 categories = ["gui"]
 
 [dependencies]
-hooke = "0.0.0"
+hooke = "0.1.1"
+whichever = "0.8"
