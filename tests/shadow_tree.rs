@@ -6,10 +6,10 @@ use std::collections::HashSet;
 use std::sync::Arc;
 
 use folio::{
-    Color, Family, FamilyId, ImageProps, ImageShadowNode, ImageState, Inline, LayoutSystems, LayoutableShadowNode,
-    Props, PropsKind, Revision, ShadowNode, ShadowNodeKind, ShadowTree, Stale, TextAttributes, TextItem, TextProps,
-    TextShadowNode, TextSpanProps, TextSpanShadowNode, TextStyle, ViewProps, ViewShadowNode, WindowShadowNode,
-    WindowState, edit,
+    Appearance, Color, Family, FamilyId, ImageProps, ImageShadowNode, ImageState, Inline, LayoutSystems,
+    LayoutableShadowNode, Props, PropsKind, Revision, ShadowNode, ShadowNodeKind, ShadowTree, Stale, TextAttributes,
+    TextItem, TextProps, TextShadowNode, TextSpanProps, TextSpanShadowNode, TextStyle, ViewProps, ViewShadowNode,
+    WindowShadowNode, WindowState, edit,
 };
 use hooke::{LayoutCx, RootConstraints, Scratch, Size};
 
@@ -19,7 +19,7 @@ use elsewhere::{SwitchProps, SwitchShadowNode};
 mod elsewhere {
     use std::sync::Arc;
 
-    use folio::{Family, LayoutableShadowNode, Props, PropsKind, ShadowNode, ShadowNodeKind, ViewProps};
+    use folio::{Family, LayoutableShadowNode, Props, ShadowNode, ShadowNodeKind, ViewProps};
     use hooke::{Children, LayoutState, Parts, PartsMut};
 
     #[derive(Clone, Debug, Default)]
@@ -37,28 +37,23 @@ mod elsewhere {
     #[derive(Clone, Debug)]
     pub struct SwitchShadowNode {
         family: Family,
-        props: Arc<PropsKind>,
+        props: Arc<SwitchProps>,
         children: Children<ShadowNodeKind>,
         layout: LayoutState,
-    }
-
-    /// The constructor only ever puts switch props in `Other`.
-    fn switch_props(props: &PropsKind) -> &SwitchProps {
-        props.downcast_ref().expect("a switch holds switch props")
     }
 
     impl SwitchShadowNode {
         pub fn new(props: SwitchProps) -> Self {
             SwitchShadowNode {
                 family: Family::new(),
-                props: Arc::new(PropsKind::Other(Box::new(props))),
+                props: Arc::new(props),
                 children: Children::empty(),
                 layout: LayoutState::measured(0),
             }
         }
 
         pub fn is_on(&self) -> bool {
-            self.props().on
+            self.props.on
         }
     }
 
@@ -70,30 +65,21 @@ mod elsewhere {
         }
 
         fn props(&self) -> &SwitchProps {
-            switch_props(&self.props)
-        }
-
-        fn props_kind(&self) -> &Arc<PropsKind> {
             &self.props
         }
     }
 
     impl LayoutableShadowNode for SwitchShadowNode {
         fn view_props(&self) -> &ViewProps {
-            &self.props().view
+            &self.props.view
         }
 
         fn layout_parts(&self) -> Parts<'_, ShadowNodeKind> {
-            Parts { style: &self.props().view.layout, state: &self.layout, children: &self.children }
+            Parts { style: &self.props.view.layout, state: &self.layout, children: &self.children }
         }
 
-        // Borrows only the props field, so the layout state can be borrowed mutably.
         fn layout_parts_mut(&mut self) -> PartsMut<'_, ShadowNodeKind> {
-            PartsMut {
-                style: &switch_props(&self.props).view.layout,
-                state: &mut self.layout,
-                children: &mut self.children,
-            }
+            PartsMut { style: &self.props.view.layout, state: &mut self.layout, children: &mut self.children }
         }
     }
 }
@@ -410,93 +396,28 @@ fn a_family_never_changes_its_parent() {
 }
 
 #[test]
-fn each_basic_kind_gives_its_own_props_kind() {
-    let view = ViewShadowNode::new(ViewProps::default(), []);
-    let PropsKind::View(props) = &**view.props_kind() else { panic!("a view gives View") };
-    assert!(std::ptr::eq(props, view.props()));
-
-    let window = WindowShadowNode::new(ViewProps::default(), []);
-    let PropsKind::View(props) = &**window.props_kind() else { panic!("a window gives View") };
-    assert!(std::ptr::eq(props, window.props()));
-
-    let text = TextShadowNode::new(TextProps::default(), [], []);
-    let PropsKind::Text(props) = &**text.props_kind() else { panic!("text gives Text") };
-    assert!(std::ptr::eq(props, text.props()));
-
-    let image = ImageShadowNode::new(ImageProps::default());
-    let PropsKind::Image(props) = &**image.props_kind() else { panic!("an image gives Image") };
-    assert!(std::ptr::eq(props, image.props()));
-
-    let span = TextSpanShadowNode::new(TextSpanProps { style: Arc::new(TextStyle::default()) }, []);
-    let PropsKind::TextSpan(props) = &**span.props_kind() else { panic!("a span gives TextSpan") };
-    assert!(std::ptr::eq(props, span.props()));
-}
-
-#[test]
-fn props_kind_is_shared_by_a_node_and_its_clones() {
+fn a_clone_of_a_node_shares_its_props() {
     let image = ImageShadowNode::new(ImageProps { source: Some("logo.png".into()), ..Default::default() });
-    assert!(Arc::ptr_eq(image.props_kind(), image.props_kind()));
     let copy = image.clone();
-    assert!(Arc::ptr_eq(image.props_kind(), copy.props_kind()));
     assert!(std::ptr::eq(image.props(), copy.props()));
 }
 
-#[test]
-fn shadow_node_kind_forwards_props_kind() {
-    let app = build();
-    let PropsKind::View(props) = &**app.card.props_kind() else { panic!("the card gives View") };
-    assert!(std::ptr::eq(props, app.card.view_props()));
-    let PropsKind::View(props) = &**app.main.props_kind() else { panic!("a window gives View") };
-    assert!(std::ptr::eq(props, app.main.view_props()));
-    let PropsKind::Text(props) = &**app.label.props_kind() else { panic!("the label gives Text") };
-    assert!(std::ptr::eq(&props.view, app.label.view_props()));
-    let PropsKind::Image(props) = &**app.picture.props_kind() else { panic!("the picture gives Image") };
-    assert_eq!(props.source.as_deref(), Some("avatar.png"));
-    assert!(std::ptr::eq(&props.view, app.picture.view_props()));
-
-    let switch = app.switch.props_kind();
-    assert!(matches!(&**switch, PropsKind::Other(_)));
-    let props = switch.downcast_ref::<SwitchProps>().unwrap();
-    assert!(props.on);
-    assert!(std::ptr::eq(&props.view, app.switch.view_props()));
+fn picture_in(root: &ShadowNodeKind) -> &ImageShadowNode {
+    let ShadowNodeKind::Image(image) = &**child(child(child(root, 0), 0), 1) else { panic!("not an image") };
+    image
 }
 
 #[test]
-fn props_kind_downcasts_to_the_type_it_holds() {
-    let app = build();
-    assert!(app.switch.props_kind().downcast_ref::<ImageProps>().is_none());
-    assert!(app.switch.props_kind().downcast_ref::<ViewProps>().is_none());
-
-    let picture = app.picture.props_kind().downcast_ref::<ImageProps>().unwrap();
-    assert_eq!(picture.source.as_deref(), Some("avatar.png"));
-    assert!(std::ptr::eq(&picture.view, app.picture.view_props()));
-    assert!(app.picture.props_kind().downcast_ref::<SwitchProps>().is_none());
-    assert!(std::ptr::eq(app.card.props_kind().downcast_ref::<ViewProps>().unwrap(), app.card.view_props()));
-}
-
-#[test]
-fn props_kind_works_on_a_trait_object() {
-    let app = build();
-    let ShadowNodeKind::Other(other) = &*app.switch else { panic!("the switch is another kind") };
-    let layoutable: &dyn LayoutableShadowNode = &**other;
-    assert!(Arc::ptr_eq(layoutable.props_kind(), app.switch.props_kind()));
-
-    let image = ImageShadowNode::new(ImageProps::default());
-    let node: &dyn ShadowNode = &image;
-    assert!(Arc::ptr_eq(node.props_kind(), image.props_kind()));
-}
-
-#[test]
-fn props_kind_is_kept_across_revisions_until_the_props_change() {
+fn props_are_kept_across_revisions_until_they_change() {
     let app = build();
     let mut scratch = Scratch::new();
     let (second, _) = open_windows(&app, &mut scratch);
     let third = report_picture(&app, &second, &mut scratch);
 
-    let old_picture = child(child(child(&second.root, 0), 0), 1);
-    let new_picture = child(child(child(&third.root, 0), 0), 1);
-    assert!(!Arc::ptr_eq(old_picture, new_picture));
-    assert!(Arc::ptr_eq(old_picture.props_kind(), new_picture.props_kind()));
+    let old_picture = picture_in(&second.root);
+    let new_picture = picture_in(&third.root);
+    assert!(!std::ptr::eq(old_picture, new_picture));
+    assert!(std::ptr::eq(old_picture.props(), new_picture.props()));
 
     let mut root = third.root.clone();
     let found = edit(&mut root, app.picture.family(), |node| {
@@ -504,38 +425,19 @@ fn props_kind_is_kept_across_revisions_until_the_props_change() {
         image.set_props(image.props().clone());
     });
     assert!(found);
-    let replaced = child(child(child(&root, 0), 0), 1);
-    assert!(!Arc::ptr_eq(replaced.props_kind(), new_picture.props_kind()));
-    assert!(!Arc::ptr_eq(app.card.props_kind(), app.picture.props_kind()));
-}
-
-#[test]
-fn props_kind_reads_view_props_through_props() {
-    let app = build();
-    assert!(std::ptr::eq(app.card.props_kind().view_props().unwrap(), app.card.view_props()));
-    assert!(std::ptr::eq(app.main.props_kind().view_props().unwrap(), app.main.view_props()));
-    assert!(std::ptr::eq(app.label.props_kind().view_props().unwrap(), app.label.view_props()));
-    assert!(std::ptr::eq(app.picture.props_kind().view_props().unwrap(), app.picture.view_props()));
-    assert!(std::ptr::eq(app.switch.props_kind().view_props().unwrap(), app.switch.view_props()));
-
-    let span = TextSpanShadowNode::new(TextSpanProps { style: Arc::new(TextStyle::default()) }, []);
-    assert!(span.props_kind().view_props().is_none());
-}
-
-#[test]
-fn props_kind_outlives_its_node() {
-    let image = node(ImageShadowNode::new(ImageProps { source: Some("logo.png".into()), ..Default::default() }));
-    let kept = image.props_kind().clone();
-    drop(image);
-    let PropsKind::Image(props) = &*kept else { panic!("an image gives Image") };
-    assert_eq!(props.source.as_deref(), Some("logo.png"));
-    assert!(kept.view_props().is_some());
+    assert!(!std::ptr::eq(picture_in(&root).props(), new_picture.props()));
 }
 
 #[test]
 fn props_kind_converts_from_each_payload() {
-    assert!(matches!(PropsKind::from(ViewProps::default()), PropsKind::View(_)));
-    assert!(matches!(PropsKind::from(TextProps::default()), PropsKind::Text(_)));
+    let appearance = Arc::new(Appearance { opacity: 0.5, ..Default::default() });
+    let view = ViewProps { appearance, ..Default::default() };
+    let PropsKind::View(view) = PropsKind::from(view) else { panic!("gives View") };
+    assert_eq!(view.appearance.opacity, 0.5);
+    let style = Arc::new(TextStyle { font_weight: Some(300), ..Default::default() });
+    let text = TextProps { style, ..Default::default() };
+    let PropsKind::Text(text) = PropsKind::from(text) else { panic!("gives Text") };
+    assert_eq!(text.style.font_weight, Some(300));
     let span = TextSpanProps { style: Arc::new(TextStyle { font_weight: Some(700), ..Default::default() }) };
     let PropsKind::TextSpan(span) = PropsKind::from(span) else { panic!("gives TextSpan") };
     assert_eq!(span.style.font_weight, Some(700));
@@ -543,7 +445,59 @@ fn props_kind_converts_from_each_payload() {
     let PropsKind::Image(image) = PropsKind::from(image) else { panic!("gives Image") };
     assert_eq!(image.source.as_deref(), Some("logo.png"));
     let other: Box<dyn Props> = Box::new(SwitchProps { on: true, ..Default::default() });
-    let other = PropsKind::from(other);
-    assert!(matches!(other, PropsKind::Other(_)));
-    assert!(other.downcast_ref::<SwitchProps>().unwrap().on);
+    assert!(matches!(PropsKind::from(other), PropsKind::Other(_)));
+}
+
+#[test]
+fn props_kind_downcasts_to_the_type_it_holds() {
+    let image = PropsKind::from(ImageProps { source: Some("logo.png".into()), ..Default::default() });
+    assert_eq!(image.downcast_ref::<ImageProps>().unwrap().source.as_deref(), Some("logo.png"));
+    assert!(image.downcast_ref::<ViewProps>().is_none());
+    assert!(image.downcast_ref::<SwitchProps>().is_none());
+
+    let view = PropsKind::from(ViewProps::default());
+    assert!(view.downcast_ref::<ViewProps>().is_some());
+    assert!(view.downcast_ref::<ImageProps>().is_none());
+
+    let other: Box<dyn Props> = Box::new(SwitchProps { on: true, ..Default::default() });
+    let switch = PropsKind::from(other);
+    assert!(switch.downcast_ref::<SwitchProps>().unwrap().on);
+    assert!(switch.downcast_ref::<ViewProps>().is_none());
+    assert!(switch.downcast_ref::<ImageProps>().is_none());
+}
+
+#[test]
+fn props_kind_reads_view_props_through_props() {
+    let view = PropsKind::from(ViewProps::default());
+    let PropsKind::View(inner) = &view else { panic!("gives View") };
+    assert!(std::ptr::eq(view.view_props().unwrap(), inner));
+
+    let text = PropsKind::from(TextProps::default());
+    let PropsKind::Text(inner) = &text else { panic!("gives Text") };
+    assert!(std::ptr::eq(text.view_props().unwrap(), &inner.view));
+
+    let image = PropsKind::from(ImageProps::default());
+    let PropsKind::Image(inner) = &image else { panic!("gives Image") };
+    assert!(std::ptr::eq(image.view_props().unwrap(), &inner.view));
+
+    let other: Box<dyn Props> = Box::new(SwitchProps::default());
+    let switch = PropsKind::from(other);
+    let inner = switch.downcast_ref::<SwitchProps>().unwrap();
+    assert!(std::ptr::eq(switch.view_props().unwrap(), &inner.view));
+
+    let span = PropsKind::from(TextSpanProps { style: Arc::new(TextStyle::default()) });
+    assert!(span.view_props().is_none());
+}
+
+#[test]
+fn props_kind_copied_from_a_node_shares_its_groups() {
+    let app = build();
+    let ShadowNodeKind::Image(picture) = &*app.picture else { panic!("the picture is an image") };
+    let copy = PropsKind::from(picture.props().clone());
+    let PropsKind::Image(props) = &copy else { panic!("gives Image") };
+    assert!(!std::ptr::eq(props, picture.props()));
+    assert_eq!(props.source.as_deref(), Some("avatar.png"));
+    assert!(Arc::ptr_eq(&props.view.appearance, &picture.props().view.appearance));
+    assert!(Arc::ptr_eq(&props.view.layout, &picture.props().view.layout));
+    assert!(Arc::ptr_eq(&props.view.accessibility, &picture.props().view.accessibility));
 }

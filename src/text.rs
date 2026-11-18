@@ -7,7 +7,6 @@ use hooke::{Children, LayoutState, Parts, PartsMut};
 use crate::family::Family;
 use crate::shadow_node_kind::{ShadowNodeKind, child_views};
 use crate::props::{Props, ViewProps};
-use crate::props_kind::PropsKind;
 use crate::shadow_node::{LayoutableShadowNode, ShadowNode};
 use crate::text_span::TextSpanShadowNode;
 use crate::text_style::{ParagraphStyle, TextAttributes, TextStyle};
@@ -69,7 +68,7 @@ pub enum TextItem {
 #[derive(Clone, Debug)]
 pub struct TextShadowNode {
     family: Family,
-    props: Arc<PropsKind>,
+    props: Arc<TextProps>,
     content: Arc<[Inline]>,
     attachments: Children<ShadowNodeKind>,
     layout: LayoutState,
@@ -86,12 +85,12 @@ impl TextShadowNode {
         let content: Arc<[Inline]> = content.into_iter().collect();
         place_spans(&family, &content);
         let attachments = child_views(&family, attachments);
-        TextShadowNode { family, props: Arc::new(props.into()), content, attachments, layout: LayoutState::measured(0) }
+        TextShadowNode { family, props: Arc::new(props), content, attachments, layout: LayoutState::measured(0) }
     }
 
     /// Replaces the props. The author's field. Sizes measured before no longer hold.
     pub fn set_props(&mut self, props: TextProps) {
-        self.props = Arc::new(props.into());
+        self.props = Arc::new(props);
         self.layout.invalidate();
     }
 
@@ -128,7 +127,7 @@ impl TextShadowNode {
             }
         }
         let mut items = Vec::new();
-        walk(&self.content, &self.props.text().style.resolve(inherited), &mut items);
+        walk(&self.content, &self.props.style.resolve(inherited), &mut items);
         items
     }
 }
@@ -141,24 +140,20 @@ impl ShadowNode for TextShadowNode {
     }
 
     fn props(&self) -> &TextProps {
-        self.props.text()
-    }
-
-    fn props_kind(&self) -> &Arc<PropsKind> {
         &self.props
     }
 }
 
 impl LayoutableShadowNode for TextShadowNode {
     fn view_props(&self) -> &ViewProps {
-        &self.props.text().view
+        &self.props.view
     }
 
     fn layout_parts(&self) -> Parts<'_, ShadowNodeKind> {
-        Parts { style: &self.props.text().view.layout, state: &self.layout, children: &self.attachments }
+        Parts { style: &self.props.view.layout, state: &self.layout, children: &self.attachments }
     }
 
     fn layout_parts_mut(&mut self) -> PartsMut<'_, ShadowNodeKind> {
-        PartsMut { style: &self.props.text().view.layout, state: &mut self.layout, children: &mut self.attachments }
+        PartsMut { style: &self.props.view.layout, state: &mut self.layout, children: &mut self.attachments }
     }
 }

@@ -4,7 +4,6 @@ use std::sync::Arc;
 
 use crate::family::Family;
 use crate::props::{Props, ViewProps};
-use crate::props_kind::PropsKind;
 use crate::shadow_node::ShadowNode;
 use crate::text::{Inline, place_spans};
 use crate::text_style::TextStyle;
@@ -30,7 +29,7 @@ impl Props for TextSpanProps {
 #[derive(Clone, Debug)]
 pub struct TextSpanShadowNode {
     family: Family,
-    props: Arc<PropsKind>,
+    props: Arc<TextSpanProps>,
     children: Arc<[Inline]>,
 }
 
@@ -42,7 +41,7 @@ impl TextSpanShadowNode {
         let family = Family::new();
         let children: Arc<[Inline]> = children.into_iter().collect();
         place_spans(&family, &children);
-        TextSpanShadowNode { family, props: Arc::new(props.into()), children }
+        TextSpanShadowNode { family, props: Arc::new(props), children }
     }
 
     /// What the span contains, in order.
@@ -59,10 +58,6 @@ impl ShadowNode for TextSpanShadowNode {
     }
 
     fn props(&self) -> &TextSpanProps {
-        self.props.text_span()
-    }
-
-    fn props_kind(&self) -> &Arc<PropsKind> {
         &self.props
     }
 }

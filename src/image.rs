@@ -7,7 +7,6 @@ use hooke::{Children, LayoutState, Parts, PartsMut, Size};
 use crate::family::Family;
 use crate::shadow_node_kind::ShadowNodeKind;
 use crate::props::{Color, Props, ViewProps};
-use crate::props_kind::PropsKind;
 use crate::shadow_node::{LayoutableShadowNode, ShadowNode};
 
 /// Props of an image: a view, and what to show in it.
@@ -38,7 +37,7 @@ pub struct ImageState {
 #[derive(Clone, Debug)]
 pub struct ImageShadowNode {
     family: Family,
-    props: Arc<PropsKind>,
+    props: Arc<ImageProps>,
     state: Option<Arc<ImageState>>,
     /// Always empty. A layout pass borrows a child list from every view.
     children: Children<ShadowNodeKind>,
@@ -50,7 +49,7 @@ impl ImageShadowNode {
     pub fn new(props: ImageProps) -> Self {
         ImageShadowNode {
             family: Family::new(),
-            props: Arc::new(props.into()),
+            props: Arc::new(props),
             state: None,
             children: Children::empty(),
             layout: LayoutState::measured(0),
@@ -59,7 +58,7 @@ impl ImageShadowNode {
 
     /// Replaces the props. The author's field.
     pub fn set_props(&mut self, props: ImageProps) {
-        self.props = Arc::new(props.into());
+        self.props = Arc::new(props);
         self.layout.invalidate();
     }
 
@@ -88,24 +87,20 @@ impl ShadowNode for ImageShadowNode {
     }
 
     fn props(&self) -> &ImageProps {
-        self.props.image()
-    }
-
-    fn props_kind(&self) -> &Arc<PropsKind> {
         &self.props
     }
 }
 
 impl LayoutableShadowNode for ImageShadowNode {
     fn view_props(&self) -> &ViewProps {
-        &self.props.image().view
+        &self.props.view
     }
 
     fn layout_parts(&self) -> Parts<'_, ShadowNodeKind> {
-        Parts { style: &self.props.image().view.layout, state: &self.layout, children: &self.children }
+        Parts { style: &self.props.view.layout, state: &self.layout, children: &self.children }
     }
 
     fn layout_parts_mut(&mut self) -> PartsMut<'_, ShadowNodeKind> {
-        PartsMut { style: &self.props.image().view.layout, state: &mut self.layout, children: &mut self.children }
+        PartsMut { style: &self.props.view.layout, state: &mut self.layout, children: &mut self.children }
     }
 }

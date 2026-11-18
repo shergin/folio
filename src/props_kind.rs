@@ -1,4 +1,4 @@
-//! The dispatch enum over props: the props of a node of any kind.
+//! The dispatch enum over props: props of any kind.
 
 use std::any::Any;
 
@@ -7,17 +7,15 @@ use crate::props::{Props, ViewProps};
 use crate::text::TextProps;
 use crate::text_span::TextSpanProps;
 
-/// The props of a node of any kind.
+/// Props of any kind, as one value.
 ///
 /// This is to props what [`ShadowNodeKind`](crate::ShadowNodeKind) is to views. The props
 /// types everyone uses are inline variants, and props of any other type go in
 /// [`Other`](PropsKind::Other). The enum implements [`Props`] by forwarding to whichever
-/// variant it holds.
+/// variant it holds, and converts from each of its payloads.
 ///
-/// A node holds its props as an `Arc<PropsKind>`. The enum is the props themselves; the
-/// `Arc` around it is how the revisions of a node share them and how anything else keeps
-/// them. [`ShadowNode::props_kind`](crate::ShadowNode::props_kind) hands that pointer out
-/// for any node, so two nodes have the same props exactly when `Arc::ptr_eq` says so.
+/// Nodes do not hold their props in this form: each kind holds its own props type. The
+/// enum is for code that has to carry props without knowing which kind they belong to.
 #[whichever::dispatch(Props)]
 #[derive(Debug)]
 pub enum PropsKind {
@@ -35,8 +33,8 @@ pub enum PropsKind {
 }
 
 impl PropsKind {
-    /// The props as the concrete type `P`, if that is what is held. This is how a kind the
-    /// enum does not list reads its own props back out of [`Other`](PropsKind::Other).
+    /// The props as the concrete type `P`, if that is what is held. This is how props the
+    /// enum does not list are read back out of [`Other`](PropsKind::Other).
     pub fn downcast_ref<P: Props>(&self) -> Option<&P> {
         let props: &dyn Any = match self {
             PropsKind::View(props) => props,
@@ -46,36 +44,5 @@ impl PropsKind {
             PropsKind::Other(props) => &**props,
         };
         props.downcast_ref()
-    }
-
-    // What each basic kind reads its own props with. A node only ever holds the variant
-    // its constructor and setter put there.
-
-    pub(crate) fn view(&self) -> &ViewProps {
-        match self {
-            PropsKind::View(props) => props,
-            _ => unreachable!("a view holds view props"),
-        }
-    }
-
-    pub(crate) fn text(&self) -> &TextProps {
-        match self {
-            PropsKind::Text(props) => props,
-            _ => unreachable!("a text holds text props"),
-        }
-    }
-
-    pub(crate) fn text_span(&self) -> &TextSpanProps {
-        match self {
-            PropsKind::TextSpan(props) => props,
-            _ => unreachable!("a span holds span props"),
-        }
-    }
-
-    pub(crate) fn image(&self) -> &ImageProps {
-        match self {
-            PropsKind::Image(props) => props,
-            _ => unreachable!("an image holds image props"),
-        }
     }
 }
