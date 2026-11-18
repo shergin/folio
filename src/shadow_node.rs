@@ -6,6 +6,7 @@
 
 use std::any::Any;
 use std::fmt::Debug;
+use std::sync::Arc;
 
 use hooke::{Parts, PartsMut};
 
@@ -35,9 +36,10 @@ pub trait ShadowNode: Any + Debug + Send + Sync {
     where
         Self: Sized;
 
-    /// What the author said, for code that does not know the kind: the same props, shared
-    /// with this node, in a form that can be matched on.
-    fn props_kind(&self) -> PropsKind;
+    /// What the author said, for code that does not know the kind: the same props, in the
+    /// form the node holds them. Clone the pointer to keep them; compare pointers to learn
+    /// whether two nodes have the same props.
+    fn props_kind(&self) -> &Arc<PropsKind>;
 }
 
 /// A view: a node that a layout system can size and place.

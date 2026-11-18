@@ -30,7 +30,7 @@ impl Props for TextSpanProps {
 #[derive(Clone, Debug)]
 pub struct TextSpanShadowNode {
     family: Family,
-    props: Arc<TextSpanProps>,
+    props: Arc<PropsKind>,
     children: Arc<[Inline]>,
 }
 
@@ -42,7 +42,7 @@ impl TextSpanShadowNode {
         let family = Family::new();
         let children: Arc<[Inline]> = children.into_iter().collect();
         place_spans(&family, &children);
-        TextSpanShadowNode { family, props: Arc::new(props), children }
+        TextSpanShadowNode { family, props: Arc::new(props.into()), children }
     }
 
     /// What the span contains, in order.
@@ -59,10 +59,10 @@ impl ShadowNode for TextSpanShadowNode {
     }
 
     fn props(&self) -> &TextSpanProps {
-        &self.props
+        self.props.text_span()
     }
 
-    fn props_kind(&self) -> PropsKind {
-        PropsKind::TextSpan(self.props.clone())
+    fn props_kind(&self) -> &Arc<PropsKind> {
+        &self.props
     }
 }

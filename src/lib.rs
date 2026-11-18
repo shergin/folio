@@ -15,8 +15,9 @@
 //! - **One struct per kind, one enum over the views.** [`ShadowNodeKind`] holds a view of
 //!   any kind. The basic kinds are inline variants, and any other kind fits in its last
 //!   variant as a trait object. The tree is made of `Arc<ShadowNodeKind>`.
-//! - **One enum over the props.** [`PropsKind`] holds the props of a node of any kind,
-//!   shared with the node. It is what a node hands out when its kind is not known.
+//! - **One enum over the props.** [`PropsKind`] holds the props of a node of any kind.
+//!   Every node keeps its props as an `Arc<PropsKind>` and hands that out when its kind is
+//!   not known.
 //! - **Layout systems meet at the view.** A kind says what it is to its parent and which
 //!   layout system it runs for its children: [`ViewShadowNode`] runs flexbox,
 //!   [`TextShadowNode`] runs text, [`WindowShadowNode`] hands out the space its host

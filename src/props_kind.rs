@@ -1,6 +1,6 @@
 //! The dispatch enum over props: the props of a node of any kind.
 
-use std::sync::Arc;
+use std::any::Any;
 
 use crate::image::ImageProps;
 use crate::props::{Props, ViewProps};
@@ -9,48 +9,73 @@ use crate::text_span::TextSpanProps;
 
 /// The props of a node of any kind.
 ///
-/// [`ShadowNode::props`](crate::ShadowNode::props) is typed, so it needs the kind of the
-/// node to be known. This is what [`ShadowNode::props_kind`](crate::ShadowNode::props_kind)
-/// hands out when it is not: the same props, in a form that can be matched on.
-///
-/// The props are shared with the node, not copied. A `PropsKind` can therefore be kept
-/// after the node is gone, and [`ptr_eq`](PropsKind::ptr_eq) tells in one comparison
-/// whether two nodes have the same props.
-///
-/// The props types everyone uses are variants; props of any other type go in
+/// This is to props what [`ShadowNodeKind`](crate::ShadowNodeKind) is to views. The props
+/// types everyone uses are inline variants, and props of any other type go in
 /// [`Other`](PropsKind::Other). The enum implements [`Props`] by forwarding to whichever
 /// variant it holds.
+///
+/// A node holds its props as an `Arc<PropsKind>`. The enum is the props themselves; the
+/// `Arc` around it is how the revisions of a node share them and how anything else keeps
+/// them. [`ShadowNode::props_kind`](crate::ShadowNode::props_kind) hands that pointer out
+/// for any node, so two nodes have the same props exactly when `Arc::ptr_eq` says so.
 #[whichever::dispatch(Props)]
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub enum PropsKind {
     /// The props of a plain view, and of a window.
-    #[dispatch(deref)]
-    View(Arc<ViewProps>),
+    View(ViewProps),
     /// The props of a block of text.
-    #[dispatch(deref)]
-    Text(Arc<TextProps>),
+    Text(TextProps),
     /// The props of a range inside text.
-    #[dispatch(deref)]
-    TextSpan(Arc<TextSpanProps>),
+    TextSpan(TextSpanProps),
     /// The props of an image.
-    #[dispatch(deref)]
-    Image(Arc<ImageProps>),
+    Image(ImageProps),
     /// Props of a type this enum does not list.
     #[dispatch(deref)]
-    Other(Arc<dyn Props>),
+    Other(Box<dyn Props>),
 }
 
 impl PropsKind {
-    /// True if both hold the very same props, which is what two revisions of a node hold
-    /// when the author did not change them.
-    pub fn ptr_eq(&self, other: &PropsKind) -> bool {
-        match (self, other) {
-            (PropsKind::View(a), PropsKind::View(b)) => Arc::ptr_eq(a, b),
-            (PropsKind::Text(a), PropsKind::Text(b)) => Arc::ptr_eq(a, b),
-            (PropsKind::TextSpan(a), PropsKind::TextSpan(b)) => Arc::ptr_eq(a, b),
-            (PropsKind::Image(a), PropsKind::Image(b)) => Arc::ptr_eq(a, b),
-            (PropsKind::Other(a), PropsKind::Other(b)) => Arc::ptr_eq(a, b),
-            _ => false,
+    /// The props as the concrete type `P`, if that is what is held. This is how a kind the
+    /// enum does not list reads its own props back out of [`Other`](PropsKind::Other).
+    pub fn downcast_ref<P: Props>(&self) -> Option<&P> {
+        let props: &dyn Any = match self {
+            PropsKind::View(props) => props,
+            PropsKind::Text(props) => props,
+            PropsKind::TextSpan(props) => props,
+            PropsKind::Image(props) => props,
+            PropsKind::Other(props) => &**props,
+        };
+        props.downcast_ref()
+    }
+
+    // What each basic kind reads its own props with. A node only ever holds the variant
+    // its constructor and setter put there.
+
+    pub(crate) fn view(&self) -> &ViewProps {
+        match self {
+            PropsKind::View(props) => props,
+            _ => unreachable!("a view holds view props"),
+        }
+    }
+
+    pub(crate) fn text(&self) -> &TextProps {
+        match self {
+            PropsKind::Text(props) => props,
+            _ => unreachable!("a text holds text props"),
+        }
+    }
+
+    pub(crate) fn text_span(&self) -> &TextSpanProps {
+        match self {
+            PropsKind::TextSpan(props) => props,
+            _ => unreachable!("a span holds span props"),
+        }
+    }
+
+    pub(crate) fn image(&self) -> &ImageProps {
+        match self {
+            PropsKind::Image(props) => props,
+            _ => unreachable!("an image holds image props"),
         }
     }
 }

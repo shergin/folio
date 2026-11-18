@@ -43,7 +43,7 @@ impl WindowState {
 #[derive(Clone, Debug)]
 pub struct WindowShadowNode {
     family: Family,
-    props: Arc<ViewProps>,
+    props: Arc<PropsKind>,
     state: Option<Arc<WindowState>>,
     children: Children<ShadowNodeKind>,
     layout: LayoutState,
@@ -57,12 +57,12 @@ impl WindowShadowNode {
     pub fn new(props: ViewProps, children: impl IntoIterator<Item = Arc<ShadowNodeKind>>) -> Self {
         let family = Family::new();
         let children = child_views(&family, children);
-        WindowShadowNode { family, props: Arc::new(props), state: None, children, layout: LayoutState::measured(0) }
+        WindowShadowNode { family, props: Arc::new(props.into()), state: None, children, layout: LayoutState::measured(0) }
     }
 
     /// Replaces the props. The author's field.
     pub fn set_props(&mut self, props: ViewProps) {
-        self.props = Arc::new(props);
+        self.props = Arc::new(props.into());
     }
 
     /// Replaces the children. The author's field.
@@ -106,17 +106,17 @@ impl ShadowNode for WindowShadowNode {
     }
 
     fn props(&self) -> &ViewProps {
-        &self.props
+        self.props.view()
     }
 
-    fn props_kind(&self) -> PropsKind {
-        PropsKind::View(self.props.clone())
+    fn props_kind(&self) -> &Arc<PropsKind> {
+        &self.props
     }
 }
 
 impl LayoutableShadowNode for WindowShadowNode {
     fn view_props(&self) -> &ViewProps {
-        &self.props
+        self.props.view()
     }
 
     fn layout_parts(&self) -> Parts<'_, ShadowNodeKind> {

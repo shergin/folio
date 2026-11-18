@@ -14,7 +14,7 @@ use crate::shadow_node::{LayoutableShadowNode, ShadowNode};
 #[derive(Clone, Debug)]
 pub struct ViewShadowNode {
     family: Family,
-    props: Arc<ViewProps>,
+    props: Arc<PropsKind>,
     children: Children<ShadowNodeKind>,
     layout: LayoutState,
 }
@@ -24,12 +24,12 @@ impl ViewShadowNode {
     pub fn new(props: ViewProps, children: impl IntoIterator<Item = Arc<ShadowNodeKind>>) -> Self {
         let family = Family::new();
         let children = child_views(&family, children);
-        ViewShadowNode { family, props: Arc::new(props), children, layout: LayoutState::container() }
+        ViewShadowNode { family, props: Arc::new(props.into()), children, layout: LayoutState::container() }
     }
 
     /// Replaces the props. The author's field.
     pub fn set_props(&mut self, props: ViewProps) {
-        self.props = Arc::new(props);
+        self.props = Arc::new(props.into());
     }
 
     /// Replaces the children. The author's field.
@@ -46,24 +46,24 @@ impl ShadowNode for ViewShadowNode {
     }
 
     fn props(&self) -> &ViewProps {
-        &self.props
+        self.props.view()
     }
 
-    fn props_kind(&self) -> PropsKind {
-        PropsKind::View(self.props.clone())
+    fn props_kind(&self) -> &Arc<PropsKind> {
+        &self.props
     }
 }
 
 impl LayoutableShadowNode for ViewShadowNode {
     fn view_props(&self) -> &ViewProps {
-        &self.props
+        self.props.view()
     }
 
     fn layout_parts(&self) -> Parts<'_, ShadowNodeKind> {
-        Parts { style: &self.props.layout, state: &self.layout, children: &self.children }
+        Parts { style: &self.props.view().layout, state: &self.layout, children: &self.children }
     }
 
     fn layout_parts_mut(&mut self) -> PartsMut<'_, ShadowNodeKind> {
-        PartsMut { style: &self.props.layout, state: &mut self.layout, children: &mut self.children }
+        PartsMut { style: &self.props.view().layout, state: &mut self.layout, children: &mut self.children }
     }
 }
