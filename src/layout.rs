@@ -2,7 +2,7 @@
 
 use hooke::{LayoutCx, Measure, MeasureInput, Measured};
 
-use crate::kind::ShadowNodeKind;
+use crate::shadow_node_kind::ShadowNodeKind;
 
 /// What runs when flexbox reaches a view it does not lay out itself.
 ///

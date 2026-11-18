@@ -15,6 +15,8 @@
 //! - **One struct per kind, one enum over the views.** [`ShadowNodeKind`] holds a view of
 //!   any kind. The basic kinds are inline variants, and any other kind fits in its last
 //!   variant as a trait object. The tree is made of `Arc<ShadowNodeKind>`.
+//! - **One enum over the props.** [`PropsKind`] holds the props of a node of any kind,
+//!   shared with the node. It is what a node hands out when its kind is not known.
 //! - **Layout systems meet at the view.** A kind says what it is to its parent and which
 //!   layout system it runs for its children: [`ViewShadowNode`] runs flexbox,
 //!   [`TextShadowNode`] runs text, [`WindowShadowNode`] hands out the space its host
@@ -33,10 +35,11 @@
 
 mod family;
 mod image;
-mod kind;
 mod layout;
 mod props;
+mod props_kind;
 mod shadow_node;
+mod shadow_node_kind;
 mod text;
 mod text_span;
 mod text_style;
@@ -46,10 +49,11 @@ mod window;
 
 pub use family::{Family, FamilyId};
 pub use image::{ImageProps, ImageShadowNode, ImageState};
-pub use kind::ShadowNodeKind;
 pub use layout::LayoutSystems;
 pub use props::{Accessibility, Appearance, Color, LayoutStyle, Props, ViewProps};
+pub use props_kind::PropsKind;
 pub use shadow_node::{CloneBoxed, LayoutableShadowNode, ShadowNode};
+pub use shadow_node_kind::ShadowNodeKind;
 pub use text::{Inline, TextItem, TextProps, TextShadowNode};
 pub use text_span::{TextSpanProps, TextSpanShadowNode};
 pub use text_style::{ParagraphStyle, TextAttributes, TextStyle};

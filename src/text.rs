@@ -5,8 +5,9 @@ use std::sync::Arc;
 use hooke::{Children, LayoutState, Parts, PartsMut};
 
 use crate::family::Family;
-use crate::kind::{ShadowNodeKind, child_views};
+use crate::shadow_node_kind::{ShadowNodeKind, child_views};
 use crate::props::{Props, ViewProps};
+use crate::props_kind::PropsKind;
 use crate::shadow_node::{LayoutableShadowNode, ShadowNode};
 use crate::text_span::TextSpanShadowNode;
 use crate::text_style::{ParagraphStyle, TextAttributes, TextStyle};
@@ -22,7 +23,11 @@ pub struct TextProps {
     pub paragraph: Arc<ParagraphStyle>,
 }
 
-impl Props for TextProps {}
+impl Props for TextProps {
+    fn view_props(&self) -> Option<&ViewProps> {
+        Some(&self.view)
+    }
+}
 
 /// One child in a text context. `[Inline]` is the child list of the text system, as
 /// `hooke::Children` is the child list of flexbox.
@@ -137,6 +142,10 @@ impl ShadowNode for TextShadowNode {
 
     fn props(&self) -> &TextProps {
         &self.props
+    }
+
+    fn props_kind(&self) -> PropsKind {
+        PropsKind::Text(self.props.clone())
     }
 }
 

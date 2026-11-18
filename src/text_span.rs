@@ -3,7 +3,8 @@
 use std::sync::Arc;
 
 use crate::family::Family;
-use crate::props::Props;
+use crate::props::{Props, ViewProps};
+use crate::props_kind::PropsKind;
 use crate::shadow_node::ShadowNode;
 use crate::text::{Inline, place_spans};
 use crate::text_style::TextStyle;
@@ -15,7 +16,11 @@ pub struct TextSpanProps {
     pub style: Arc<TextStyle>,
 }
 
-impl Props for TextSpanProps {}
+impl Props for TextSpanProps {
+    fn view_props(&self) -> Option<&ViewProps> {
+        None
+    }
+}
 
 /// A range inside text that restyles what it contains.
 ///
@@ -55,5 +60,9 @@ impl ShadowNode for TextSpanShadowNode {
 
     fn props(&self) -> &TextSpanProps {
         &self.props
+    }
+
+    fn props_kind(&self) -> PropsKind {
+        PropsKind::TextSpan(self.props.clone())
     }
 }

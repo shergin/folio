@@ -13,7 +13,13 @@ use std::sync::Arc;
 ///
 /// Every kind of node names its props type as
 /// [`ShadowNode::Props`](crate::ShadowNode::Props), and this is what such a type must be.
-pub trait Props: Any + Debug + Send + Sync {}
+/// The trait is dispatchable, so [`PropsKind`](crate::PropsKind) implements it by forwarding
+/// to whichever props it holds.
+#[whichever::dispatchable]
+pub trait Props: Any + Debug + Send + Sync {
+    /// The props every view has, if these are the props of a view.
+    fn view_props(&self) -> Option<&ViewProps>;
+}
 
 /// Everything flexbox reads. The layout engine's style, unchanged.
 pub type LayoutStyle = hooke::Style<f32>;
@@ -59,4 +65,8 @@ pub struct ViewProps {
     pub accessibility: Arc<Accessibility>,
 }
 
-impl Props for ViewProps {}
+impl Props for ViewProps {
+    fn view_props(&self) -> Option<&ViewProps> {
+        Some(self)
+    }
+}

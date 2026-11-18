@@ -1,4 +1,4 @@
-//! The dispatch enum: a view of any kind.
+//! The dispatch enum over views: a view of any kind.
 
 use std::sync::Arc;
 
@@ -7,6 +7,7 @@ use hooke::{Children, LayoutNode, Parts, PartsMut};
 use crate::family::Family;
 use crate::image::ImageShadowNode;
 use crate::props::ViewProps;
+use crate::props_kind::PropsKind;
 use crate::shadow_node::{LayoutableShadowNode, ShadowNode};
 use crate::text::TextShadowNode;
 use crate::view::ViewShadowNode;

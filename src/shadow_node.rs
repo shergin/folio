@@ -10,15 +10,16 @@ use std::fmt::Debug;
 use hooke::{Parts, PartsMut};
 
 use crate::family::Family;
-use crate::kind::ShadowNodeKind;
+use crate::shadow_node_kind::ShadowNodeKind;
 use crate::props::{Props, ViewProps};
+use crate::props_kind::PropsKind;
 
 /// Any node: an identity and what its author said.
 ///
 /// A kind of node has one type of props, [`Props`](ShadowNode::Props). Code that knows the
 /// kind, or is generic over it (`N: ShadowNode<Props = ImageProps>`), reads them typed. A
 /// trait object has forgotten its kind, so the type and [`props`](ShadowNode::props) are
-/// absent there, and only the identity remains.
+/// absent there; [`props_kind`](ShadowNode::props_kind) works everywhere.
 #[whichever::dispatchable]
 pub trait ShadowNode: Any + Debug + Send + Sync {
     /// What an author provides for a node of this kind.
@@ -33,6 +34,10 @@ pub trait ShadowNode: Any + Debug + Send + Sync {
     fn props(&self) -> &Self::Props
     where
         Self: Sized;
+
+    /// What the author said, for code that does not know the kind: the same props, shared
+    /// with this node, in a form that can be matched on.
+    fn props_kind(&self) -> PropsKind;
 }
 
 /// A view: a node that a layout system can size and place.

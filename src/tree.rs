@@ -3,7 +3,7 @@
 use std::sync::{Arc, Mutex};
 
 use crate::family::Family;
-use crate::kind::ShadowNodeKind;
+use crate::shadow_node_kind::ShadowNodeKind;
 use crate::props::ViewProps;
 use crate::shadow_node::{LayoutableShadowNode, ShadowNode};
 use crate::view::ViewShadowNode;

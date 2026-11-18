@@ -5,8 +5,9 @@ use std::sync::Arc;
 use hooke::{Children, LayoutState, Parts, PartsMut};
 
 use crate::family::Family;
-use crate::kind::{ShadowNodeKind, child_views};
+use crate::shadow_node_kind::{ShadowNodeKind, child_views};
 use crate::props::ViewProps;
+use crate::props_kind::PropsKind;
 use crate::shadow_node::{LayoutableShadowNode, ShadowNode};
 
 /// A view that lays out its children with flexbox.
@@ -46,6 +47,10 @@ impl ShadowNode for ViewShadowNode {
 
     fn props(&self) -> &ViewProps {
         &self.props
+    }
+
+    fn props_kind(&self) -> PropsKind {
+        PropsKind::View(self.props.clone())
     }
 }
 

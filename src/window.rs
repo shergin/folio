@@ -5,8 +5,9 @@ use std::sync::{Arc, LazyLock};
 use hooke::{Children, LayoutCx, LayoutState, Measure, Opt, Parts, PartsMut, Point, Position, RootConstraints};
 
 use crate::family::Family;
-use crate::kind::{ShadowNodeKind, child_views};
+use crate::shadow_node_kind::{ShadowNodeKind, child_views};
 use crate::props::{LayoutStyle, ViewProps};
+use crate::props_kind::PropsKind;
 use crate::shadow_node::{LayoutableShadowNode, ShadowNode};
 
 /// What the host says about one window: the space it offers and the facts of its surface.
@@ -106,6 +107,10 @@ impl ShadowNode for WindowShadowNode {
 
     fn props(&self) -> &ViewProps {
         &self.props
+    }
+
+    fn props_kind(&self) -> PropsKind {
+        PropsKind::View(self.props.clone())
     }
 }
 

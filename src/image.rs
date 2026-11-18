@@ -5,8 +5,9 @@ use std::sync::Arc;
 use hooke::{Children, LayoutState, Parts, PartsMut, Size};
 
 use crate::family::Family;
-use crate::kind::ShadowNodeKind;
+use crate::shadow_node_kind::ShadowNodeKind;
 use crate::props::{Color, Props, ViewProps};
+use crate::props_kind::PropsKind;
 use crate::shadow_node::{LayoutableShadowNode, ShadowNode};
 
 /// Props of an image: a view, and what to show in it.
@@ -20,7 +21,11 @@ pub struct ImageProps {
     pub tint: Option<Color>,
 }
 
-impl Props for ImageProps {}
+impl Props for ImageProps {
+    fn view_props(&self) -> Option<&ViewProps> {
+        Some(&self.view)
+    }
+}
 
 /// What the host learned about an image after the author described it.
 #[derive(Clone, PartialEq, Debug, Default)]
@@ -84,6 +89,10 @@ impl ShadowNode for ImageShadowNode {
 
     fn props(&self) -> &ImageProps {
         &self.props
+    }
+
+    fn props_kind(&self) -> PropsKind {
+        PropsKind::Image(self.props.clone())
     }
 }
 
